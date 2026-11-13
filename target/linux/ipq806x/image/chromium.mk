@@ -1,3 +1,10 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
+define Device/dsa-migration
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
 define Build/cros-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -o $@.tmp -g \
@@ -42,11 +49,12 @@ define Device/OnhubImage
 			   partx-utils mkf2fs kmod-fs-f2fs \
 			   ucode kmod-google-firmware kmod-tpm-i2c-infineon \
 			   kmod-sound-soc-ipq8064-storm kmod-usb-storage \
-			   kmod-ramoops
+			   kmod-ramoops audio-support
 endef
 
 define Device/asus_onhub
 	$(call Device/OnhubImage)
+	$(Device/dsa-migration)
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := OnHub SRT-AC1900
 	DEVICE_DTS := $$(SOC)-asus-onhub
@@ -56,6 +64,7 @@ TARGET_DEVICES += asus_onhub
 
 define Device/tplink_onhub
 	$(call Device/OnhubImage)
+	$(Device/dsa-migration)
 	DEVICE_VENDOR := TP-Link
 	DEVICE_MODEL := OnHub AC1900 Cloud Router
 	DEVICE_DTS := $$(SOC)-tplink-onhub

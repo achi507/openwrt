@@ -36,12 +36,6 @@
 			default-state = "keep";
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
@@ -95,28 +89,22 @@
 				reg = <0x050000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				calibration_ath9k: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
+					calibration_ath9k: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				calibration_ath10k: calibration@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					calibration_ath10k: calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 
-				macaddr_art_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
-
-				macaddr_art_1002: macaddr@1002 {
-					reg = <0x1002 0x6>;
-				};
-
-				macaddr_art_5006: macaddr@5006 {
-					reg = <0x5006 0x6>;
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 				};
 			};
 
@@ -145,10 +133,15 @@
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy0>;
+	phy-mode = "sgmii";
 
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &gpio {
@@ -163,9 +156,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
+	ethernet-switch@10 {
+		compatible = "qca,ar8327";
+		reg = <0x10>;
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
 			0x7c 0x0000007e /* PORT0_STATUS */
@@ -180,8 +173,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_art_5006>, <&calibration_ath10k>;
-		nvmem-cell-names = "mac-address", "pre-calibration";
+		nvmem-cells = <&calibration_ath10k>;
+		nvmem-cell-names = "pre-calibration";
 	};
 };
 
@@ -204,6 +197,11 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_1002>, <&calibration_ath9k>;
-	nvmem-cell-names = "mac-address", "calibration";
+	nvmem-cells = <&calibration_ath9k>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <19>;
+		led-active-low;
+	};
 };

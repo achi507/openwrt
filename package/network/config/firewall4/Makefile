@@ -5,13 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall4
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firewall4.git
-PKG_SOURCE_DATE:=2023-03-23
-PKG_SOURCE_VERSION:=04a06bd70b9808b14444cae81a2faba4708ee231
-PKG_MIRROR_HASH:=37c34facb733c50d0fdbfa238765a23e667e4daaae9728aaccbaba87a2a07bb9
+PKG_SOURCE_DATE:=2026-11-08
+PKG_SOURCE_VERSION:=3722eadc088c3ab81389596ca9796112b436583a
+PKG_MIRROR_HASH:=a95c6cfe419c7d4e22bda5608aa6e46c67dadc9c7096879702d614cc498759d0
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
@@ -26,8 +26,9 @@ define Package/firewall4
 	+kmod-nft-nat \
 	+nftables-json \
 	+ucode +ucode-mod-fs +ucode-mod-ubus +ucode-mod-uci
-  EXTRA_DEPENDS:=ucode (>= 2022-03-22)
+  EXTRA_DEPENDS:=ucode (>=2022.03.22)
   PROVIDES:=uci-firewall
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/firewall4/description

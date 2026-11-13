@@ -1,9 +1,6 @@
+# Copyright (C) 2010-2026 Jo-Philipp Wich <jo@mein.io>
 #
-# Copyright (C) 2010-2015 Jo-Philipp Wich <jo@mein.io>
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# SPDX-License-Identifier: GPL-2.0-only
 
 include $(TOPDIR)/rules.mk
 
@@ -12,9 +9,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uhttpd.git
-PKG_SOURCE_DATE:=2023-01-28
-PKG_SOURCE_VERSION:=47561aa13574068403d48f13ea310f8511057b2b
-PKG_MIRROR_HASH:=84500cf0c8224fe80b5717c9b6bad8ac13f44f286e3a88e8b12adfcf02e22c7c
+PKG_SOURCE_DATE:=2026-11-05
+PKG_SOURCE_VERSION:=93b05e0b65d91c23c5aa8fdde378df1f174ec71d
+PKG_MIRROR_HASH:=8305c6d4c63aa3c8f6471c55256a378dd9ee3b2898e0b3c096540ba4ec23f2db
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=ISC
 
@@ -34,7 +31,7 @@ endef
 
 define Package/uhttpd
   $(Package/uhttpd/default)
-  DEPENDS:=+libubox +libblobmsg-json +libjson-script +libjson-c
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +libubox +libblobmsg-json +libjson-script +libjson-c
 endef
 
 define Package/uhttpd/description
@@ -105,6 +102,13 @@ define Package/uhttpd-mod-ubus/install
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/etc/uci-defaults
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd_ubus.so $(1)/usr/lib/
 	$(INSTALL_DATA) ./files/ubus.default $(1)/etc/uci-defaults/00_uhttpd_ubus
+endef
+
+define Package/uhttpd-mod-ubus/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	/etc/init.d/uhttpd reload
+fi
 endef
 
 define Package/uhttpd-mod-ucode/install

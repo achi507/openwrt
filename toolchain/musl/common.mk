@@ -8,12 +8,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=musl
-PKG_VERSION:=1.2.4
+PKG_VERSION:=1.2.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://musl.libc.org/releases/
-PKG_HASH:=7a35eae33d5372a7c0da1188de798726f68825513b7ae3ebe97aaaa52114f039
+PKG_HASH:=d585fd3b613c66151fc3249e8ed44f77020cb5e6c1e635a616d3f9f82460512a
+PKG_CPE_ID:=cpe:/a:musl-libc:musl
 
 LIBC_SO_VERSION:=$(PKG_VERSION)
 PATCH_DIR:=$(PATH_PREFIX)/patches

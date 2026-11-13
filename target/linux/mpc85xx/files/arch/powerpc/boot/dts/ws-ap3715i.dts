@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later or MIT
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 /include/ "fsl/p1010si-pre.dtsi"
 
@@ -24,7 +26,7 @@
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x10000000>;
 	};
-	
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -42,12 +44,14 @@
 
 		led_power_green: power_green {
 			gpios = <&spi_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_power_red: power_red {
 			gpios = <&spi_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 		};
 
 		lan1_red {
@@ -68,6 +72,16 @@
 		lan2_green {
 			gpios = <&spi_gpio 5 GPIO_ACTIVE_HIGH>;
 			label = "green:lan2";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -105,6 +119,9 @@
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
 
+			nvmem-cells = <&macaddr_cfg1_ethaddr 0>;
+			nvmem-cell-names = "mac-address";
+
 			label = "lan1";
 		};
 
@@ -113,6 +130,9 @@
 			phy-connection-type = "sgmii";
 
 			tbi-handle = <&tbi_phy>;
+
+			nvmem-cells = <&macaddr_cfg1_ethaddr 1>;
+			nvmem-cell-names = "mac-address";
 
 			label = "lan2";
 		};
@@ -127,22 +147,24 @@
 	};
 
 	ifc: ifc@ffe1e000 {
+		reg = <0x0 0xffe1e000 0 0x2000>;
+
+		status = "disabled";
 	};
 
 	pci0: pcie@ffe09000 {
 		reg = <0 0xffe09000 0 0x1000>;
-		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
-			  0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
 		pcie@0 {
 			ranges = <0x2000000 0x0 0xa0000000
 				  0x2000000 0x0 0xa0000000
-				  0x0 0x20000000
-
-				  0x1000000 0x0 0x0
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
 
-			wifi@0,0,0 {
+			wifi@0,0 {
 				compatible = "pci168c,0033";
 				reg = <0x0 0 0 0 0>;
 				ieee80211-freq-limit = <2400000 2500000>;
@@ -152,18 +174,17 @@
 
 	pci1: pcie@ffe0a000 {
 		reg = <0 0xffe0a000 0 0x1000>;
-		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
-			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000>,
+			  <0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
 		pcie@0 {
 			ranges = <0x2000000 0x0 0x80000000
 				  0x2000000 0x0 0x80000000
-				  0x0 0x20000000
-
-				  0x1000000 0x0 0x0
+				  0x0 0x20000000>,
+				 <0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
-			
-			wifi@0,0,0 {
+
+			wifi@0,0 {
 				compatible = "pci168c,0033";
 				reg = <0x0 0 0 0 0>;
 				ieee80211-freq-limit = <5000000 6000000>;
@@ -218,13 +239,20 @@
 				partition@120000 {
 					reg = <0x120000 0x10000>;
 					label = "cfg1";
-					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+						env-size = <0x1000>;
+
+						macaddr_cfg1_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				partition@130000 {
 					reg = <0x130000 0x10000>;
 					label = "cfg2";
-					read-only;
 				};
 
 				partition@140000 {

@@ -13,6 +13,7 @@
 
 	aliases {
 		ethernet0 = &gmac0;
+		label-mac-device = &gmac0;
 		led-boot = &led_power_r;
 		led-failsafe = &led_power_r;
 		led-running = &led_power_g;
@@ -84,6 +85,7 @@
 			default-state = "off";
 			gpios = <&pio 85 GPIO_ACTIVE_LOW>;
 			label = "wifin:green";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wifin_blue {
@@ -96,6 +98,7 @@
 			default-state = "off";
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 			label = "wifia:green";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wifia_blue {
@@ -105,16 +108,13 @@
 		};
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 };
 
 &bch {
-	status = "okay";
-};
-
-&btif {
 	status = "okay";
 };
 
@@ -147,13 +147,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		switch@0 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
+			reg = <31>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			interrupt-parent = <&pio>;
 			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
-			reg = <0>;
 			reset-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
 
 			ports {
@@ -207,7 +207,8 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <7>;
 			reset-gpios = <&pio 101 GPIO_ACTIVE_LOW>;
-			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&pio>;
+			interrupts = <77 IRQ_TYPE_LEVEL_LOW>;
 			reset-assert-us = <100000>;
 			reset-deassert-us = <100000>;
 		};
@@ -356,7 +357,7 @@
 };
 
 &slot0 {
-	wmac1: mt7915@0,0 {
+	wmac1: wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
@@ -404,20 +405,31 @@
 				reg = <0x140000 0x0080000>;
 			};
 
-			factory: partition@1c0000 {
-				compatible = "nvmem-cells";
+			partition@1c0000 {
 				label = "Factory";
 				reg = <0x1c0000 0x0100000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_factory_7fff4: macaddr@7fff4 {
-					reg = <0x7fff4 0x6>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_factory_7fffa: macaddr@7fffa {
-					reg = <0x7fffa 0x6>;
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x4da8>; /* actual length 0x400 */
+					};
+
+					eeprom_factory_5000: eeprom@5000 {
+						reg = <0x5000 0xe00>;
+					};
+
+					macaddr_factory_7fff4: macaddr@7fff4 {
+						reg = <0x7fff4 0x6>;
+					};
+
+					macaddr_factory_7fffa: macaddr@7fffa {
+						reg = <0x7fffa 0x6>;
+					};
 				};
 			};
 
@@ -549,10 +561,12 @@
 };
 
 &wmac {
-	mediatek,mtd-eeprom = <&factory 0x0000>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	status = "okay";
 };
 
 &wmac1 {
-	mediatek,mtd-eeprom = <&factory 0x05000>;
+	nvmem-cells = <&eeprom_factory_5000>;
+	nvmem-cell-names = "eeprom";
 };

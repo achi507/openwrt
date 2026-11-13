@@ -2,6 +2,8 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
@@ -16,11 +18,14 @@
 	};
 
 	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	reg_3p3v: regulator-3p3v {
@@ -67,12 +72,14 @@
 		compatible = "gpio-leds";
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -83,6 +90,10 @@
 	};
 };
 
+&crypto {
+	status = "okay";
+};
+
 &eth {
 	status = "okay";
 
@@ -91,7 +102,7 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_config_1c>;
+		nvmem-cells = <&macaddr_config_1c 0>;
 		nvmem-cell-names = "mac-address";
 
 		fixed-link {
@@ -107,9 +118,8 @@
 		phy-handle = <&phy7>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_config_1c>;
+		nvmem-cells = <&macaddr_config_1c 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 
 	mdio: mdio-bus {
@@ -137,7 +147,7 @@
 		realtek,aldps-enable;
 	};
 
-	switch: switch@31 {
+	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
@@ -155,13 +165,11 @@
 
 	flash@0 {
 		compatible = "spi-nand";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 
 		spi-max-frequency = <20000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -178,12 +186,34 @@
 				label = "config";
 				reg = <0x100000 0x0060000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_1c: macaddr@1c {
+						compatible = "mac-base";
+						reg = <0x1c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
-			factory: partition@160000 {
+			partition@160000 {
 				label = "factory";
 				reg = <0x160000 0x0060000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
 			};
 
 			partition@1c0000 {
@@ -199,8 +229,15 @@
 			};
 
 			partition@580000 {
-				label = "ubi";
+				compatible = "linux,ubi";
 				reg = <0x580000 0x7800000>;
+				label = "ubi";
+
+				volumes {
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
 			};
 		};
 	};
@@ -214,13 +251,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 	};
 };
@@ -228,6 +265,10 @@
 &ssusb {
 	vusb33-supply = <&reg_3p3v>;
 	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
 
@@ -239,20 +280,13 @@
 	status = "okay";
 };
 
-&wmac {
-	mediatek,mtd-eeprom = <&factory 0x0>;
-	nvmem-cells = <&macaddr_config_1c>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
+&watchdog {
 	status = "okay";
 };
 
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+&wifi {
+	status = "okay";
 
-	macaddr_config_1c: macaddr@1c {
-		reg = <0x1c 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_1c 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
